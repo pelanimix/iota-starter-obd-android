@@ -36,9 +36,42 @@
                 android:paddingTop="0dp">
 
                 <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="15dp">
+
+                </TableRow>
+
+                <TableRow
                     android:layout_marginTop="15dp"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="10"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/headingLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:text="Heading"
+                            android:textAppearance="?android:attr/textAppearanceLarge"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/headingValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="10dp"
+                            android:text="N/A"
+                            android:textAppearance="?android:attr/textAppearanceLarge"
+                            android:textSize="17dp" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/linearLayout61"
@@ -295,19 +328,66 @@
 
             </LinearLayout>
 
-            <Button
-                android:id="@+id/button"
-                style="@style/Widget.AppCompat.Button"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/protocolSwitch"
+                    style="@style/Base.TextAppearance.AppCompat.Widget.Switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="5"
+                    android:checked="false"
+                    android:contentDescription="Select protocol to send probe data (HTTP or MQTT)"
+                    android:showText="true"
+                    android:text="Protocol (HTTP / MQTT)"
+                    android:textOff="HTTP"
+                    android:textOn="MQTT"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
-                android:layout_above="@+id/versionAndBuild"
-                android:layout_centerHorizontal="true"
-                android:layout_marginRight="2.5dp"
-                android:layout_marginBottom="15dp"
-                android:layout_weight="5"
-                android:nestedScrollingEnabled="false"
-                android:onClick="endSession"
-                android:text="End Session" />
+                android:orientation="horizontal">
+
+                <ToggleButton
+                    android:id="@+id/send_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:onClick="send"
+                    android:text="Send  Car Probe"
+                    android:textOff="Send Car Probe"
+                    android:textOn="Send Car Probe" />
+
+                <ToggleButton
+                    android:id="@+id/pause_btn"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:checked="false"
+                    android:onClick="pause"
+                    android:text="Pause"
+                    android:textOff="Pause"
+                    android:textOn="Pause" />
+
+                <Button
+                    android:id="@+id/button"
+                    style="@style/Widget.AppCompat.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_above="@+id/versionAndBuild"
+                    android:layout_centerHorizontal="true"
+                    android:layout_weight="1"
+                    android:nestedScrollingEnabled="false"
+                    android:onClick="endSession"
+                    android:text="End Session" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/versionAndBuild"
@@ -317,6 +397,7 @@
                 android:layout_centerHorizontal="true"
                 android:text="Version: 1.0.2 Build: 20180615"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
+
         </LinearLayout>
     </LinearLayout>
 

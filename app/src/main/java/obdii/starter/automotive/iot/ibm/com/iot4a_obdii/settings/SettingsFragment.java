@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the license.
  */
 
-package obdii.starter.automotive.iot.ibm.com.iot4a_obdii;
+package obdii.starter.automotive.iot.ibm.com.iot4a_obdii.settings;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,18 +19,31 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
-public class SettingsFragment extends PreferenceFragment {
+import obdii.starter.automotive.iot.ibm.com.iot4a_obdii.R;
+import obdii.starter.automotive.iot.ibm.com.iot4a_obdii.obd.ObdBridge;
 
-    public static final String ORGANIZATION_ID = "organization_id";
-    public static final String API_KEY = "api_key";
-    public static final String API_TOKEN = "api_token";
-    public static final String DEVICE_ID = "device_id";
-    public static final String DEVICE_TOKEN = "device_token";
+import static obdii.starter.automotive.iot.ibm.com.iot4a_obdii.ObdAppConstants.DEFAULT_FREQUENCY_SEC;
+import static obdii.starter.automotive.iot.ibm.com.iot4a_obdii.ObdAppConstants.MAX_FREQUENCY_SEC;
+import static obdii.starter.automotive.iot.ibm.com.iot4a_obdii.ObdAppConstants.MIN_FREQUENCY_SEC;
+
+public class SettingsFragment extends PreferenceFragment {
+    public static final String APP_SERVER_URL = "app_server_url";
+    public static final String APP_SERVER_USERNAME = "app_server_username";
+    public static final String APP_SERVER_PASSWORD = "app_server_password";
+    public static final String PROTOCOL = "protocol"; // Protocol to send car probe data. HTTP/MQTT
+
+    public static final String ENDPOINT = "endpoint"; // VDH: URL, IoTP: organization id
+    public static final String VENDOR = "vendor"; // VDH: vendor, IoTP type id
+    public static final String USERNAME = "username"; //VDH: uesr, IoTP: N/A
+    public static final String PASSWORD = "password"; // VDH: password, IoTP: device token
+    public static final String MO_ID = "mo_id"; // VDH: mo_id, IoTP: device id
+
+    public static final String BLUETOOTH_DEVICE_ID = "bt_device_id";
     public static final String BLUETOOTH_DEVICE_NAME = "bt_device_name";
     public static final String BLUETOOTH_DEVICE_ADDRESS = "bt_device_address";
-    public static final String UPLOAD_FREQUENCY = "upload_frequency";
     public static final String OBD_TIMEOUT_MS = "obd_timeout_ms";
     public static final String OBD_PROTOCOL = "obd_protocol";
+    public static final String UPLOAD_FREQUENCY = "upload_frequency";
 
     public SettingsFragment() {
         // Required empty public constructor
@@ -47,18 +60,16 @@ public class SettingsFragment extends PreferenceFragment {
 
     public void initializeSettings() {
         final Intent intent = getActivity().getIntent();
-        prepareEditTextPreference(ORGANIZATION_ID, intent.getStringExtra(ORGANIZATION_ID), IoTPlatformDevice.defaultOrganizationId, true, null);
-        prepareEditTextPreference(API_KEY, intent.getStringExtra(API_KEY), IoTPlatformDevice.defaultApiKey, true, null);
-        prepareEditTextPreference(API_TOKEN, intent.getStringExtra(API_TOKEN), IoTPlatformDevice.defaultApiToken, true, null);
-        prepareEditTextPreference(DEVICE_ID, intent.getStringExtra(DEVICE_ID), "", false, null);
-        prepareEditTextPreference(DEVICE_TOKEN, intent.getStringExtra(DEVICE_TOKEN), "", true, null);
+        prepareEditTextPreference(APP_SERVER_URL, intent.getStringExtra(APP_SERVER_URL), "", true, null);
+        prepareEditTextPreference(APP_SERVER_USERNAME, intent.getStringExtra(APP_SERVER_USERNAME), "", true, null);
+        prepareEditTextPreference(APP_SERVER_PASSWORD, intent.getStringExtra(APP_SERVER_PASSWORD), "", true, null);
         prepareEditTextPreference(BLUETOOTH_DEVICE_NAME, intent.getStringExtra(BLUETOOTH_DEVICE_NAME), "", false, null);
         prepareEditTextPreference(BLUETOOTH_DEVICE_ADDRESS, intent.getStringExtra(BLUETOOTH_DEVICE_ADDRESS), "", false, null);
-        prepareEditTextPreference(UPLOAD_FREQUENCY, intent.getStringExtra(UPLOAD_FREQUENCY), "" + Home.DEFAULT_FREQUENCY_SEC, true, new Preference.OnPreferenceChangeListener() {
+        prepareEditTextPreference(UPLOAD_FREQUENCY, intent.getStringExtra(UPLOAD_FREQUENCY), "" + DEFAULT_FREQUENCY_SEC, true, new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
                 final int intValue = Integer.parseInt(newValue.toString());
-                if (Home.MIN_FREQUENCY_SEC <= intValue && intValue <= Home.MAX_FREQUENCY_SEC) {
+                if (MIN_FREQUENCY_SEC <= intValue && intValue <= MAX_FREQUENCY_SEC) {
                     preference.setSummary(newValue.toString());
                     return true;
                 } else {

@@ -11,60 +11,136 @@
 package obdii.starter.automotive.iot.ibm.com.iot4a_obdii;
 
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import android.util.Base64;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import obdii.starter.automotive.iot.ibm.com.iot4a_obdii.device.Protocol;
 
 public class API {
+    private static String defaultAppURL = "https://iota-starter-server-fleetmgmt.mybluemix.net";
+    private static String defaultAppUser = "starter";
+    private static String defaultAppPassword = "Starter4Iot";
 
-    public static class doRequest extends AsyncTask<String, Void, JSONArray> {
+    public static String connectedAppURL = defaultAppURL;
+    public static String connectedAppUser = defaultAppUser;
+    public static String connectedAppPassword = defaultAppPassword;
 
-        public interface TaskListener {
-            public void postExecute(JSONArray result) throws JSONException;
-        }
+    public static AsyncTask getDeviceAccessInfo(String uuid, Protocol protocol, TaskListener listener){
+        final API.doRequest request = new API.doRequest(listener);
+        String url = connectedAppURL + "/user/device/" + uuid + "?protocol=" + protocol.name().toLowerCase();
+        return request.execute(url, "GET", null, connectedAppUser, connectedAppPassword);
+    }
+    public static AsyncTask registerDevice(String uuid, Protocol protocol, TaskListener listener){
+        final API.doRequest request = new API.doRequest(listener);
+        String url = connectedAppURL + "/user/device/" + uuid + "?protocol=" + protocol.name().toLowerCase();
+        return request.execute(url, "POST", null, connectedAppUser, connectedAppPassword);
+    }
+    public static AsyncTask checkMQTTAvailable(TaskListener listener){
+        final API.doRequest request = new API.doRequest(listener);
+        String url = connectedAppURL + "/user/capability/device";
+        return request.execute(url, "GET", null, connectedAppUser, connectedAppPassword);
+    }
 
+    public static void useDefault(){
+        connectedAppURL = defaultAppURL;
+        connectedAppUser = defaultAppUser;
+        connectedAppPassword = defaultAppPassword;
+    }
+    public static void doInitialize(String appUrl, String appUsername, String appPassword){
+        connectedAppURL = appUrl;
+        connectedAppUser = appUsername;
+        connectedAppPassword = appPassword;
+    }
+
+    public static String getDefaultAppURL() {
+        return defaultAppURL;
+    }
+
+    public static String getDefaultAppUser() {
+        return defaultAppUser;
+    }
+
+    public static String getDefaultAppPassword() {
+        return defaultAppPassword;
+    }
+
+    public static String getConnectedAppURL() {
+        return connectedAppURL;
+    }
+
+    public static String getConnectedAppUser() {
+        return connectedAppUser;
+    }
+
+    public static String getConnectedAppPassword() {
+        return connectedAppPassword;
+    }
+
+    public static class doRequest extends AsyncTask<String, Void, Response> {
         private final TaskListener taskListener;
-        private final String uuid;
 
-        public doRequest(final TaskListener listener, final String uuid) {
+        public doRequest(final TaskListener listener) {
             this.taskListener = listener;
-            this.uuid = uuid;
         }
 
         @Override
-        protected JSONArray doInBackground(String... params) {
+        protected Response doInBackground(String... params) {
             /*      params[0] == url (String)
-                    params[1] == request type (String e.g. "GET")
-                    params[2] == parameters query (Uri converted to String)
-                    params[3] == body (JSONObject converted to String)
-                    params[4] == Basic Auth
+                    params[1] == request method (String e.g. "GET")
+                    params[2] == body (JsonObject converted to String)
+                    params[3] == user
+                    params[4] == password
             */
 
-            int code = 0;
+            int code = 500;
+            if(params == null || params.length <= 2){
+                JsonObject message = new JsonObject();
+                message.addProperty("error", "URL or method is not specified.");
+                return new Response(code, message);
+            }
+            HttpURLConnection urlConnection = null;
 
             try {
                 URL url = new URL(params[0]);   // params[0] == URL - String
-                String requestType = params[1]; // params[1] == Request Type - String e.g. "GET"
-                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                String requestType = params[1]; // params[1] == Request Method - String e.g. "GET"
+                urlConnection = (HttpURLConnection) url.openConnection();
 
                 Log.i(requestType + " Request", params[0]);
 
-                urlConnection.setRequestProperty("iota-starter-uuid", uuid);
-                Log.i("Using UUID", uuid);
+                urlConnection.setRequestProperty("Accept", "application/json");
 
                 urlConnection.setRequestMethod(requestType);
+
+                // params[3] == user, params[4] == password
+                if(params.length >= 5 && params[3] != null && params[3].length() > 0 && params[4] != null && params[4].length() > 0){
+                    Log.i("Using Basic Auth", "");
+                    urlConnection.setRequestProperty("Authorization", "Basic " + Base64.encodeToString((params[3]+":"+params[4]).getBytes("UTF-8"), Base64.NO_WRAP));
+                }
 
                 if (requestType.equals("POST") || requestType.equals("PUT") || requestType.equals("GET")) {
                     if (!requestType.equals("GET")) {
@@ -72,29 +148,10 @@ public class API {
                         urlConnection.setDoOutput(true);
                     }
 
-                    if (params.length > 2 && params[2] != null) { // params[2] == HTTP Parameters Query - String
-                        String query = params[2];
+                    if (params.length >= 3 && params[2] != null) { // params[3] == HTTP Body - String
+                        String httpBody = params[2];
 
-                        OutputStream os = urlConnection.getOutputStream();
-                        BufferedWriter writer = new BufferedWriter(
-                                new OutputStreamWriter(os, "UTF-8"));
-                        writer.write(query);
-                        writer.flush();
-                        writer.close();
-                        os.close();
-
-                        Log.i("Using Parameters", params[2]);
-                    }
-
-                    if (params.length > 4) {
-                        urlConnection.setRequestProperty("Authorization", "Basic " + params[4]);
-
-                        Log.i("Using Basic Auth", "");
-                    }
-
-                    if (params.length > 3 && params[3] != null) { // params[3] == HTTP Body - String
-                        String httpBody = params[3];
-
+                        urlConnection.setRequestProperty("Accept", "application/json");
                         urlConnection.setRequestProperty("Content-Type", "application/json");
                         urlConnection.setRequestProperty("Content-Length", httpBody.length() + "");
 
@@ -109,105 +166,109 @@ public class API {
                     urlConnection.connect();
                 }
 
+                code = urlConnection.getResponseCode();
+                Log.d("Responded With", code + "");
+
+                BufferedReader bufferedReader = null;
+                InputStream inputStream = null;
+
                 try {
-                    code = urlConnection.getResponseCode();
+                    inputStream = urlConnection.getInputStream();
+                } catch (IOException exception) {
+                    inputStream = urlConnection.getErrorStream();
+                }
 
-                    BufferedReader bufferedReader = null;
-                    InputStream inputStream = null;
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
 
-                    try {
-                        inputStream = urlConnection.getInputStream();
-                    } catch (IOException exception) {
-                        inputStream = urlConnection.getErrorStream();
-                    }
+                StringBuilder stringBuilder = new StringBuilder();
 
-                    bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line);
+                }
 
-                    StringBuilder stringBuilder = new StringBuilder();
+                bufferedReader.close();
 
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        stringBuilder.append(line);
-                    }
+                try {
+                    JsonObject result = new Gson().fromJson(stringBuilder.toString(), JsonObject.class);
+                    Response response = new Response(code, result);
+                    return response;
+                } catch (JsonSyntaxException ex) {
+                    JsonObject result = new JsonObject();
+                    result.addProperty("result", stringBuilder.toString());
 
-                    bufferedReader.close();
-
-                    try {
-                        JSONArray result = new JSONArray(stringBuilder.toString());
-
-                        JSONObject statusCode = new JSONObject();
-                        statusCode.put("statusCode", code + "");
-
-                        Log.d("Responded With", code + "");
-
-                        result.put(statusCode);
-
-                        return result;
-                    } catch (JSONException ex) {
-                        try {
-                            JSONArray result = new JSONArray();
-
-                            JSONObject object = new JSONObject(stringBuilder.toString());
-                            result.put(object);
-
-                            JSONObject statusCode = new JSONObject();
-                            statusCode.put("statusCode", code);
-                            Log.d("Responded With", code + "");
-
-                            result.put(statusCode);
-
-                            return result;
-                        } catch (JSONException exc) {
-                            JSONArray result = new JSONArray();
-
-                            JSONObject object = new JSONObject();
-                            object.put("result", stringBuilder.toString());
-
-                            result.put(object);
-
-                            JSONObject statusCode = new JSONObject();
-                            statusCode.put("statusCode", code);
-                            Log.d("Responded With", code + "");
-
-                            result.put(statusCode);
-
-                            return result;
-                        }
-                    }
-                } finally {
-                    urlConnection.disconnect();
+                    Response response = new Response(code, result);
+                    return response;
                 }
             } catch (Exception e) {
-                Log.e("ERROR", e.getMessage(), e);
-
-                JSONArray result = new JSONArray();
-
-                JSONObject statusCode = new JSONObject();
-
-                try {
-                    statusCode.put("statusCode", code);
-                    Log.d("Responded With", code + "");
-                } catch (JSONException e1) {
-                    e1.printStackTrace();
+                e.printStackTrace();
+                JsonObject result = new JsonObject();
+                result.addProperty("result", "Unknown error");
+                Response response = new Response(code, result);
+                return response;
+            }finally{
+                if(urlConnection != null){
+                    urlConnection.disconnect();
                 }
-
-                result.put(statusCode);
-
-                return result;
             }
         }
 
         @Override
-        protected void onPostExecute(JSONArray result) {
-            super.onPostExecute(result);
+        protected void onPostExecute(Response response) {
+            super.onPostExecute(response);
 
             if (this.taskListener != null) {
-                try {
-                    this.taskListener.postExecute(result);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                this.taskListener.postExecute(response);
             }
+        }
+    }
+    static {
+        try {
+            HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+            TrustManager[] tm = { new X509TrustManager() {
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+            } };
+            SSLContext sslcontext = SSLContext.getInstance("TLS");
+            sslcontext.init(null, tm, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public interface TaskListener {
+        void postExecute(Response result);
+    }
+
+    public static class Response{
+        private final int statusCode;
+        private final JsonObject body;
+
+        public Response(int statusCode, JsonObject body) {
+            this.statusCode = statusCode;
+            this.body = body;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public JsonObject getBody() {
+            return body;
         }
     }
 }

@@ -17,16 +17,20 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".Home"
-                  android:screenOrientation="portrait">
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity
-            android:name=".AppSettingsActivity"
+            android:name=".qrcode.SpecifyServer"
+            android:label="Specify Server"
+            android:screenOrientation="portrait">
+        </activity>
+        <activity
+            android:name=".settings.AppSettingsActivity"
             android:label="Settings"
             android:screenOrientation="portrait">
         </activity>

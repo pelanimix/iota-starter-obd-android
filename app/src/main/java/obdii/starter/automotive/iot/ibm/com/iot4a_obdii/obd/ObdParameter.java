@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the license.
  */
 
-package obdii.starter.automotive.iot.ibm.com.iot4a_obdii;
+package obdii.starter.automotive.iot.ibm.com.iot4a_obdii.obd;
 
 import android.app.Activity;
 import android.util.Log;
@@ -89,7 +89,9 @@ abstract public class ObdParameter {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                textView.setText(text);
+                if(textView != null){
+                    textView.setText(text);
+                }
             }
         });
     }

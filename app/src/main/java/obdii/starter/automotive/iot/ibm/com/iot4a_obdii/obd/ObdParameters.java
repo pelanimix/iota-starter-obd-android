@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the license.
  */
 
-package obdii.starter.automotive.iot.ibm.com.iot4a_obdii;
+package obdii.starter.automotive.iot.ibm.com.iot4a_obdii.obd;
 
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -24,6 +24,9 @@ import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import obdii.starter.automotive.iot.ibm.com.iot4a_obdii.Home;
+import obdii.starter.automotive.iot.ibm.com.iot4a_obdii.R;
 
 /**
  * Obd Parameters
@@ -84,24 +87,30 @@ public class ObdParameters {
             @Override
             protected void fetchValue(ObdCommand obdCommand, boolean simulation) {
                 if (simulation) {
-                    if (speed >= max_speed) {
-                        delta = -1.0 * speed_increment;
-                    } else if (speed <= 0.0) {
-                        speed = 0.0;
-                        delta = speed_increment;
-                    } else {
-                        final double random = Math.random();
-                        if (random < 0.4) {
+                    final Location location = activity.getLocation();
+                    if (location != null) {
+                        speed = location.getSpeed();
+                    }
+                    if(Double.compare(speed, 0) == 0){
+                        if (speed >= max_speed) {
                             delta = -1.0 * speed_increment;
-                        } else if (random > 0.6) {
+                        } else if (speed <= 0.0) {
+                            speed = 0.0;
                             delta = speed_increment;
                         } else {
-                            delta = 0;
+                            final double random = Math.random();
+                            if (random < 0.4) {
+                                delta = -1.0 * speed_increment;
+                            } else if (random > 0.6) {
+                                delta = speed_increment;
+                            } else {
+                                delta = 0;
+                            }
                         }
-                    }
-                    speed += delta;
-                    if (speed <= 0.0) {
-                        speed = 0.01;
+                        speed += delta;
+                        if (speed <= 0.0) {
+                            speed = 0.01;
+                        }
                     }
                 } else {
                     final SpeedCommand speedCommand = (SpeedCommand) obdCommand;
@@ -203,7 +212,7 @@ public class ObdParameters {
 
             @Override
             protected void setJsonProp(JsonObject json) {
-                json.addProperty("fuelLevel", fuelLevel);
+                json.addProperty("fuel", fuelLevel);
             }
 
             @Override
@@ -253,8 +262,8 @@ public class ObdParameters {
                 if (location != null) {
                     latitude = location.getLatitude();
                 }
-                valueText = valueText = String.format("%1$.7f", latitude);
-            }
+                valueText = String.format("%1$.7f", latitude);
+           }
 
             @Override
             protected boolean isBaseProp() {
@@ -272,6 +281,88 @@ public class ObdParameters {
             }
         };
         obdParameters.add(latitude);
+
+        final ObdParameter heading = new ObdParameter((TextView) activity.findViewById(R.id.headingValue), activity, "Heading", null) {
+            private double heading = 0;
+            private String valueText;
+            private Location prevLocation;
+            @Override
+            protected void fetchValue(ObdCommand obdCommand, boolean simulation) {
+                final Location location = activity.getLocation();
+                if(prevLocation != null && !prevLocation.equals(location)){ // In case location is changed
+                    heading = calcHeading(prevLocation, location);
+                }
+//                Bearing from location object may not represent vehicle heading for example in landscape mode
+//                if(location != null){
+//                    heading = location.getBearing();
+//                }
+                valueText = String.format("%1$.4f", heading);
+                prevLocation = location;
+            }
+
+            @Override
+            protected boolean isBaseProp() {
+                return true;
+            }
+
+            @Override
+            protected void setJsonProp(JsonObject json) {
+                json.addProperty("heading", heading);
+            }
+
+            @Override
+            protected String getValueText() {
+                return valueText;
+            }
+
+            private double calcHeading(Location p1, Location p2){
+                // this will calculate bearing
+                double p1lon = toRad(p1.getLongitude());
+                double p1lat = toRad(p1.getLatitude());
+                double p2lon = toRad(p2.getLongitude());
+                double p2lat = toRad(p2.getLatitude());
+                double y = Math.sin(p2lon-p1lon) * Math.cos(p2lat);
+                double x = Math.cos(p1lat)*Math.sin(p2lat) - Math.sin(p1lat)*Math.cos(p2lat)*Math.cos(p2lon-p1lon);
+                double brng = Math.atan2(y, x);
+                return (toDegree(brng) + 360) % 360;
+            }
+            private double toRad(double d){
+                return d * (Math.PI / 180);
+            }
+            private double toDegree(double d){
+                return d * (180 / Math.PI);
+            }
+        };
+        obdParameters.add(heading);
+
+        final ObdParameter altitude = new ObdParameter(null, activity, "Altitude", null) {
+            private double altitude = 0;
+            private String valueText;
+            @Override
+            protected void fetchValue(ObdCommand obdCommand, boolean simulation) {
+                final Location location = activity.getLocation();
+                if(location != null){
+                    altitude = location.getAltitude();
+                }
+                valueText = String.format("%1$.4f", altitude);
+            }
+
+            @Override
+            protected boolean isBaseProp() {
+                return true;
+            }
+
+            @Override
+            protected void setJsonProp(JsonObject json) {
+                json.addProperty("altitude", altitude);
+            }
+
+            @Override
+            protected String getValueText() {
+                return valueText;
+            }
+        };
+        obdParameters.add(altitude);
 
         return obdParameters;
     }
