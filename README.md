@@ -2,7 +2,7 @@
 
 
 ## Overview
-The IBM IoT Connected Vehicle Insights - Mobility Starter Application uses the **IBM IoT Platform** that is available on **IBM Cloud** to help you to quickly build a smart fleet management solution. The solution consists of a mobile app and a server component which is the **IBM IoT Connected Vehicle Insights - Fleet Management Starter Web Application**.
+The IBM IoT Connected Vehicle Insights - Mobility Starter Application uses the **IBM IoT Platform** that is available on **IBM Cloud** to help you to quickly build a smart fleet management solution. The solution consists of a mobile app and a server component which is the **IBM IoT Connected Vehicle Insights - Fleet Management Starter Application**.
 
 ### Mobile app
 The starter app provides a mobile app to connect to an OBDII dongle plugged in to your car. If you are a user of the application, you can use the mobile app to do the following tasks:
@@ -24,6 +24,7 @@ The "IBM IoT Connected Vehicle Insights - OBDII Fleet Management App" interacts 
 
 Before you deploy the Android application, ensure that the following prerequisites are met:
 
+- Deploy the Fleet Management Starter Application, see [ibm-watson-iot/iota-starter-server-fm-saas](https://github.com/ibm-watson-iot/iota-starter-server-fm-saas).
 - Install the Android Studio integrated development environment (IDE) V3.3.1 or later.
 - Install an Android emulator device that is running on at least API Level 21.
 - The sample source code for the mobile app is supported only for use with an Android device and is intended to be used in conjunction with officially licensed Android development tools and further customized tools that are distributed under the terms and conditions of your licensed Android Developer Program.
@@ -31,27 +32,52 @@ Before you deploy the Android application, ensure that the following prerequisit
 
 ## Deploying the mobile app
 
-To try the Android application using Android Emulator, complete the following steps:
+To try the Android application by using Android Emulator, complete the following steps.
 
-1. Clone the source code repository for the mobile app by using the following git command:    
+1. Clone the source code repository of the OBDII application for Android.
+   1. Create a project folder on a local PC.
+   1. Clone the following source code repository to the new project folder, Git clone https://github.com/ibm-watson-iot/iota-starter-obd-android. 
+   1. Install Android Studio on the local PC, see https://developer.android.com/studio/install.  If you see the following type of  'Gradle sync' error message, click OK to use the Gradle wrapper.  To read about this Gradle issue and other issues see https://github.com/flutter/flutter/issues/26832.
+    ![Gradle Sync Dialog](GradleSync.jpg) 
+   1. Open the project folder in Android Studio.
+   
+2. With Android Studio, open a root folder of the cloned repository.
+    1. In Android Studio, select 'Open an existing Android Studio project'. 
+    1. Select the directory where you cloned the source code. 
+    1. If a message about 'Android Gradle Plugin Update Recommended' displays, select 'Update'. 
+    1. Select the directory where you cloned the source code. 
+    
+3. Run the OBDII app with Android Emulator in Android Studio.
+    1. From the Android Studio toolbar, select 'Run app'
+    1. Select deployment target.
+    1. Create a virtual device if a device does not exist.
+    1. On the Disclaimer, click AGREE. 
+    1. For location access, click ALLOW.
+    1. Click the QR code image.
+    1. Click the MANUAL SETUP button.
+    1. In the left pane, select 'Settings'. 
+    1. Enter details for the following items. Fleet Management application URL, Username and Password to Fleet Management Application settings. For example, https://iota-starter-server-fleetmgmt.mybluemix.net/webclient/map.
+    1. Click left arrow to go back to the main page.
+    1. Click OK to register your device.
+    1. On 'Your Device is Now Registered!', select CLOSE.
+    1. In the Android Emulator toolbar, select the '...' icon.
+    1. In the Location page, enter the longitude and latitude details.
+    1. Click the SEND button.
+    1. Check that your device appears in the Fleet Management App.
+    
+4. Run the OBDII app with your mobile phone in Android Studio
+    1. In a browser, open your Fleet Management Starter Application, the server component, that is deployed on IBM Cloud. For example, https://iota-starter-server-fleetmgmt.mybluemix.net/webclient/map.
+    1. In the left pane, select 'Settings'. A QR code displays, the QR code is used in a latter step.
+    1. In Android Studio, within the toolbar, click the run icon. 
+    1. Select deployment target. For your mobile phone, see [Android Studio Developers](https://developer.android.com/studio/run/device).
+    1. On the Disclaimer, click AGREE.
+    1. For location access, click ALLOW.
+    1. Tap the QR code image.
+    1. Scan the QR code.
+    1. Tap OK to register your device.
+    1, On 'Your Device is Now Registered!', select CLOSE.
+    1. Check that your device appears in the Fleet Management App.
 
-    ```$ git clone https://github.com/ibm-watson-iot/iota-starter-obd-android```  
-
-2. Open the project in Android Studio.
-
-    If you encounter the following dialog, press 'OK'.    
-     
-    ![Gradle Sync Dialog](GradleSync.jpg)         
-
-3. Edit the **iota-starter-obd-android/app/java/obdii.starter.automotive.iot.ibm.com.iot4a_obdii/IoTPlatformDevice.java** file, and set the `defaultOrganizationId` variable to your Organization's ID, and the `defaultApiKey` and `defaultApiToken` variables to your API key and Auth Token, respectively, from your instance of the IoT Platform.
-
-4. In Android Studio, run the application by pressing **Run 'app'**.
-
-    If you use a virtual device, make sure that you use one with API level 21 or later as seen in the following dialog.
-
-    ![Deployment Target](DeploymentTarget.jpg)
-
-5. To deploy the mobile app on your device, see [Build and Run Your App](https://developer.android.com/studio/run/index.html).
 
 ## Reporting defects
 To report a defect with the IBM IoT Connected Vehicle Insights - Mobility Starter Application mobile app, go to the [Issues](https://github.com/ibm-watson-iot/iota-starter-obd-android/issues) section.
